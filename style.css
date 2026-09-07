@@ -757,9 +757,104 @@ body {
 }
 
 /* ===== Responsive ===== */
+
+/* ── Tablet (≤768px) ── */
+@media (max-width: 768px) {
+  .players-grid {
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 10px;
+  }
+  .game-body { padding: 14px; gap: 18px; }
+}
+
+/* ── Mobile (≤600px) ── */
 @media (max-width: 600px) {
-  .game-clock { font-size: 1.5rem; }
-  .players-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-  .game-body { padding: 14px; }
-  .header-left .btn-ghost span { display: none; }
+
+  /* Setup */
+  #setup-screen { padding: 24px 14px; }
+  .setup-header { margin-bottom: 20px; }
+  .logo { font-size: 40px; margin-bottom: 8px; }
+  .setup-header h1 { font-size: 1.5rem; }
+  .subtitle { font-size: 0.85rem; }
+  .roster-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .roster-btn { padding: 13px 10px; font-size: 0.88rem; }
+  .setup-footer { flex-direction: column; gap: 10px; align-items: stretch; }
+  .setup-footer .selected-count { text-align: center; }
+  .btn-primary { width: 100%; text-align: center; padding: 14px; font-size: 1rem; }
+  .setup-controls { margin-bottom: 8px; }
+
+  /* Game header — two rows */
+  .game-header {
+    flex-wrap: wrap;
+    padding: 10px 12px 8px;
+    gap: 8px;
+  }
+  .header-left { order: 1; min-width: unset; flex: 1; }
+  .header-center { order: 2; flex: 0 0 100%; text-align: center; padding: 2px 0 4px; }
+  .header-right { order: 3; min-width: unset; flex: 1; justify-content: flex-end; gap: 6px; }
+
+  .game-clock { font-size: 2rem; letter-spacing: 3px; }
+  .clock-label { font-size: 0.55rem; letter-spacing: 1.5px; }
+
+  .btn-ghost { padding: 7px 10px; font-size: 0.8rem; }
+  .btn-clock { padding: 7px 14px; font-size: 0.85rem; }
+
+  /* Game body */
+  .game-body { padding: 10px; gap: 14px; }
+  .section-label { margin-bottom: 10px; }
+  .section-label h2 { font-size: 0.75rem; letter-spacing: 1.5px; }
+
+  /* Cards — horizontal scroll rows on mobile */
+  .players-grid {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 6px;
+    /* hide scrollbar but keep scrollability */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    /* snap to cards */
+    scroll-snap-type: x mandatory;
+  }
+  .players-grid::-webkit-scrollbar { display: none; }
+
+  .player-card {
+    flex: 0 0 160px;
+    scroll-snap-align: start;
+    padding: 12px;
+  }
+
+  .player-name { font-size: 0.92rem; margin-bottom: 4px; }
+  .player-timer { font-size: 1.35rem; margin-bottom: 8px; }
+
+  /* Bigger tap targets for foul buttons */
+  .btn-foul-minus, .btn-foul-plus {
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+  }
+  .foul-controls { padding: 5px 6px; gap: 6px; margin-bottom: 8px; }
+  .foul-label { font-size: 0.65rem; }
+
+  /* Action buttons — full width stack */
+  .card-actions { gap: 6px; }
+  .btn-sub, .btn-put-in { padding: 8px 6px; font-size: 0.75rem; }
+  .btn-send-bench { padding: 8px 8px; font-size: 0.75rem; }
+
+  /* Modal */
+  .modal { padding: 18px 16px; }
+  .modal-header h3 { font-size: 1.1rem; }
+  .sub-option-btn { padding: 14px 14px; font-size: 0.9rem; }
+  .sub-options { max-height: 50vh; }
+
+  /* Drag handle always visible on touch */
+  .drag-handle { opacity: 0.6; font-size: 0.75rem; }
+
+  /* Empty state */
+  .empty-state { padding: 16px 10px; font-size: 0.8rem; }
 }
