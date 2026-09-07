@@ -787,15 +787,26 @@ body {
   .btn-primary { width: 100%; text-align: center; padding: 14px; font-size: 1rem; }
   .setup-controls { margin-bottom: 8px; }
 
-  /* Game header — single compact row */
+  /* Game header — row 1: back + clock | row 2: start + reset full-width */
   .game-header {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     padding: 6px 10px;
-    gap: 4px;
+    gap: 4px 6px;
   }
-  .header-left { order: 1; min-width: unset; flex: 0 0 auto; }
+  .header-left  { order: 1; min-width: unset; flex: 0 0 auto; }
   .header-center { order: 2; flex: 1; text-align: center; padding: 0; }
-  .header-right { order: 3; min-width: unset; flex: 0 0 auto; gap: 5px; }
+  .header-right {
+    order: 3;
+    min-width: unset;
+    flex: 0 0 100%;
+    justify-content: stretch;
+    gap: 6px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 6px;
+    margin-top: 2px;
+  }
+  .header-right .btn-clock { flex: 1; text-align: center; }
+  .header-right .btn-ghost  { flex: 1; text-align: center; }
 
   .game-clock { font-size: 1.3rem; letter-spacing: 1px; }
   .clock-label { display: none; }
