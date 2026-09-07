@@ -605,8 +605,7 @@ function tick() {
     if (el && el.tagName !== 'INPUT') el.textContent = formatTime(state.timers[name]);
   });
 
-  // Save every 5 seconds to avoid excessive writes
-  if (++_saveTick >= 5) { _saveTick = 0; saveState(); }
+  saveState();
 }
 
 function updateGameClock() {
