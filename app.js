@@ -226,10 +226,12 @@ function createBenchCard(name) {
   return card;
 }
 
-// ===== Drag & Drop =====
+// ===== Drag & Drop (mouse + touch) =====
 let drag = { name: null, fromZone: null };
+let touchGhost = null;
 
 function addDragListeners(card, name) {
+  // ── Mouse drag ──
   card.addEventListener('dragstart', (e) => {
     drag.name = name;
     drag.fromZone = state.courtPlayers.includes(name) ? 'court' : 'bench';
@@ -242,7 +244,6 @@ function addDragListeners(card, name) {
     document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over', 'drag-over-invalid'));
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('drag-target'));
   });
-  // Allow dropping onto another card (for swaps)
   card.addEventListener('dragover', (e) => {
     e.preventDefault();
     if (drag.name && drag.name !== name) card.classList.add('drag-target');
@@ -255,6 +256,103 @@ function addDragListeners(card, name) {
     if (!drag.name || drag.name === name) return;
     handleCardDrop(drag.name, drag.fromZone, name);
   });
+
+  // ── Touch drag ──
+  card.addEventListener('touchstart', onTouchStart, { passive: false });
+  card.addEventListener('touchmove',  onTouchMove,  { passive: false });
+  card.addEventListener('touchend',   onTouchEnd,   { passive: false });
+}
+
+function onTouchStart(e) {
+  const card = e.currentTarget;
+  const name = card.dataset.name;
+  if (!name) return;
+
+  drag.name = name;
+  drag.fromZone = state.courtPlayers.includes(name) ? 'court' : 'bench';
+
+  // Create a floating ghost clone
+  touchGhost = card.cloneNode(true);
+  touchGhost.style.cssText = `
+    position: fixed; z-index: 9999; pointer-events: none;
+    opacity: 0.85; transform: scale(1.05) rotate(2deg);
+    width: ${card.offsetWidth}px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    transition: none;
+  `;
+  document.body.appendChild(touchGhost);
+  positionGhost(e.touches[0]);
+  card.classList.add('dragging');
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  if (!touchGhost) return;
+  positionGhost(e.touches[0]);
+
+  // Highlight drop target under finger
+  touchGhost.style.display = 'none';
+  const el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+  touchGhost.style.display = '';
+
+  document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over', 'drag-over-invalid'));
+  document.querySelectorAll('.player-card').forEach(c => c.classList.remove('drag-target'));
+
+  const targetCard = el && el.closest('.player-card');
+  const targetZone = el && el.closest('.drop-zone');
+
+  if (targetCard && targetCard.dataset.name && targetCard.dataset.name !== drag.name) {
+    targetCard.classList.add('drag-target');
+  } else if (targetZone) {
+    const zoneId = targetZone.dataset.zone;
+    const fouledOut = drag.name && (state.fouls[drag.name] || 0) >= 6;
+    const wouldOverfill = zoneId === 'court' && drag.fromZone === 'bench' && state.courtPlayers.length >= 5;
+    targetZone.classList.add(fouledOut || wouldOverfill ? 'drag-over-invalid' : 'drag-over');
+  }
+}
+
+function onTouchEnd(e) {
+  const card = e.currentTarget;
+  card.classList.remove('dragging');
+  if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+  document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over', 'drag-over-invalid'));
+  document.querySelectorAll('.player-card').forEach(c => c.classList.remove('drag-target'));
+
+  if (!drag.name) return;
+
+  const touch = e.changedTouches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const targetCard = el && el.closest('.player-card');
+  const targetZone = el && el.closest('.drop-zone');
+
+  if (targetCard && targetCard.dataset.name && targetCard.dataset.name !== drag.name) {
+    handleCardDrop(drag.name, drag.fromZone, targetCard.dataset.name);
+  } else if (targetZone) {
+    const zoneId = targetZone.dataset.zone;
+    const fouledOut = (state.fouls[drag.name] || 0) >= 6;
+    if (fouledOut && zoneId === 'court') { drag = { name: null, fromZone: null }; return; }
+    if (zoneId === 'court' && drag.fromZone === 'bench') {
+      if (state.courtPlayers.length >= 5) { drag = { name: null, fromZone: null }; return; }
+      const bi = state.benchPlayers.indexOf(drag.name);
+      state.benchPlayers.splice(bi, 1);
+      state.courtPlayers.push(drag.name);
+      drag = { name: null, fromZone: null };
+      renderGame();
+    } else if (zoneId === 'bench' && drag.fromZone === 'court') {
+      const ci = state.courtPlayers.indexOf(drag.name);
+      state.courtPlayers.splice(ci, 1);
+      state.benchPlayers.push(drag.name);
+      drag = { name: null, fromZone: null };
+      renderGame();
+    }
+  }
+  drag = { name: null, fromZone: null };
+}
+
+function positionGhost(touch) {
+  if (!touchGhost) return;
+  touchGhost.style.left = (touch.clientX - touchGhost.offsetWidth / 2) + 'px';
+  touchGhost.style.top  = (touch.clientY - 30) + 'px';
 }
 
 function handleCardDrop(fromName, fromZone, toName) {
