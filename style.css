@@ -745,21 +745,22 @@ body {
   color: var(--orange);
 }
 
-/* ===== Editable Timers ===== */
-.player-timer {
-  cursor: pointer;
+/* ===== Editable Timers — MM:SS Split Picker ===== */
+.player-timer { cursor: pointer; }
+.player-timer:hover { opacity: 0.75; }
+.game-clock { cursor: pointer; }
+.game-clock:hover { opacity: 0.75; }
+
+.time-picker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: modal-in 0.15s ease;
 }
-.player-timer:hover {
-  opacity: 0.75;
-}
-.game-clock {
-  cursor: pointer;
-}
-.game-clock:hover {
-  opacity: 0.75;
-}
-.timer-input {
-  background: rgba(0,0,0,0.35);
+
+.time-picker-field {
+  width: 48px;
+  background: rgba(0,0,0,0.4);
   border: 2px solid var(--orange);
   border-radius: 8px;
   color: var(--text-primary);
@@ -767,25 +768,60 @@ body {
   font-variant-numeric: tabular-nums;
   text-align: center;
   outline: none;
-  width: 100%;
+  font-size: 1.4rem;
+  padding: 2px 2px;
   box-shadow: 0 0 0 3px rgba(255,107,53,0.2);
+  -moz-appearance: textfield;
 }
-.player-timer-input {
-  font-size: 1.5rem;
-  letter-spacing: 1px;
-  padding: 2px 4px;
-  margin-bottom: 12px;
-  display: block;
+.time-picker-field::-webkit-inner-spin-button,
+.time-picker-field::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+.time-picker-sep {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--orange);
+  line-height: 1;
+  flex-shrink: 0;
 }
-.game-clock-input {
-  font-size: 2rem;
-  letter-spacing: 2px;
-  padding: 2px 8px;
-  max-width: 140px;
+
+.time-picker-ok, .time-picker-cancel {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
 }
+.time-picker-ok {
+  background: var(--green);
+  color: #fff;
+}
+.time-picker-ok:hover { background: var(--green-dark); }
+.time-picker-cancel {
+  background: rgba(231,76,60,0.18);
+  color: #E74C3C;
+}
+.time-picker-cancel:hover { background: rgba(231,76,60,0.35); }
+
+/* Game clock picker — slightly larger */
+.game-clock-picker .time-picker-field {
+  width: 56px;
+  font-size: 1.8rem;
+}
+.game-clock-picker .time-picker-sep { font-size: 1.8rem; }
+
 @media (max-width: 600px) {
-  .player-timer-input { font-size: 1.2rem; margin-bottom: 6px; }
-  .game-clock-input { font-size: 1.3rem; letter-spacing: 1px; max-width: 100px; }
+  .time-picker-field { width: 42px; font-size: 1.2rem; }
+  .time-picker-sep { font-size: 1.2rem; }
+  .game-clock-picker .time-picker-field { width: 46px; font-size: 1.3rem; }
+  .game-clock-picker .time-picker-sep { font-size: 1.3rem; }
+  .time-picker-ok, .time-picker-cancel { width: 28px; height: 28px; font-size: 0.8rem; }
 }
 
 /* ===== Empty States ===== */
