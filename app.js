@@ -621,6 +621,10 @@ function makeTimePicker(currentSeconds, onCommit, onCancel, extraClass = '') {
   const wrap = document.createElement('div');
   wrap.className = `time-picker ${extraClass}`;
 
+  // Row 1: MM : SS inputs
+  const row = document.createElement('div');
+  row.className = 'time-picker-row';
+
   const mInput = document.createElement('input');
   mInput.type = 'number'; mInput.min = 0; mInput.max = 99;
   mInput.value = mins; mInput.inputMode = 'numeric';
@@ -635,13 +639,20 @@ function makeTimePicker(currentSeconds, onCommit, onCancel, extraClass = '') {
   sInput.inputMode = 'numeric';
   sInput.className = 'time-picker-field'; sInput.placeholder = 'SS';
 
+  row.append(mInput, sep, sInput);
+
+  // Row 2: ✓ / ✗ buttons
+  const actions = document.createElement('div');
+  actions.className = 'time-picker-actions';
+
   const ok = document.createElement('button');
-  ok.className = 'time-picker-ok'; ok.textContent = '✓';
+  ok.className = 'time-picker-ok'; ok.textContent = '✓ Set';
 
   const cancel = document.createElement('button');
-  cancel.className = 'time-picker-cancel'; cancel.textContent = '✕';
+  cancel.className = 'time-picker-cancel'; cancel.textContent = '✕ Cancel';
 
-  wrap.append(mInput, sep, sInput, ok, cancel);
+  actions.append(ok, cancel);
+  wrap.append(row, actions);
 
   const commit = () => {
     const m = Math.max(0, parseInt(mInput.value) || 0);
@@ -654,7 +665,7 @@ function makeTimePicker(currentSeconds, onCommit, onCancel, extraClass = '') {
 
   // Auto-advance: after entering 2 digits in MM, jump to SS
   mInput.addEventListener('input', () => {
-    if (mInput.value.length >= 2) sInput.focus();
+    if (mInput.value.length >= 2) { sInput.focus(); sInput.select(); }
   });
   // Enter confirms from either field
   [mInput, sInput].forEach(inp => {
