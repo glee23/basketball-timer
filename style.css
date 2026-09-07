@@ -753,13 +753,28 @@ body {
 
 .time-picker {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
   animation: modal-in 0.15s ease;
 }
 
+.time-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 100%;
+}
+
+.time-picker-actions {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 100%;
+}
+
 .time-picker-field {
-  width: 48px;
+  flex: 1;
+  min-width: 0;
   background: rgba(0,0,0,0.4);
   border: 2px solid var(--orange);
   border-radius: 8px;
@@ -769,7 +784,7 @@ body {
   text-align: center;
   outline: none;
   font-size: 1.4rem;
-  padding: 2px 2px;
+  padding: 6px 4px;
   box-shadow: 0 0 0 3px rgba(255,107,53,0.2);
   -moz-appearance: textfield;
 }
@@ -785,17 +800,16 @@ body {
 }
 
 .time-picker-ok, .time-picker-cancel {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
+  flex: 1;
+  height: 36px;
+  border-radius: 8px;
   border: none;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   transition: all 0.15s;
 }
 .time-picker-ok {
@@ -809,19 +823,16 @@ body {
 }
 .time-picker-cancel:hover { background: rgba(231,76,60,0.35); }
 
-/* Game clock picker — slightly larger */
-.game-clock-picker .time-picker-field {
-  width: 56px;
-  font-size: 1.8rem;
-}
+/* Game clock picker — slightly larger fields */
+.game-clock-picker .time-picker-field { font-size: 1.8rem; padding: 4px; }
 .game-clock-picker .time-picker-sep { font-size: 1.8rem; }
 
 @media (max-width: 600px) {
-  .time-picker-field { width: 42px; font-size: 1.2rem; }
-  .time-picker-sep { font-size: 1.2rem; }
-  .game-clock-picker .time-picker-field { width: 46px; font-size: 1.3rem; }
+  .time-picker-field { font-size: 1.3rem; padding: 8px 4px; }
+  .time-picker-sep { font-size: 1.3rem; }
+  .game-clock-picker .time-picker-field { font-size: 1.3rem; }
   .game-clock-picker .time-picker-sep { font-size: 1.3rem; }
-  .time-picker-ok, .time-picker-cancel { width: 28px; height: 28px; font-size: 0.8rem; }
+  .time-picker-ok, .time-picker-cancel { height: 40px; font-size: 0.95rem; }
 }
 
 /* ===== Empty States ===== */
