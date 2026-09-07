@@ -745,6 +745,49 @@ body {
   color: var(--orange);
 }
 
+/* ===== Editable Timers ===== */
+.player-timer {
+  cursor: pointer;
+}
+.player-timer:hover {
+  opacity: 0.75;
+}
+.game-clock {
+  cursor: pointer;
+}
+.game-clock:hover {
+  opacity: 0.75;
+}
+.timer-input {
+  background: rgba(0,0,0,0.35);
+  border: 2px solid var(--orange);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+  width: 100%;
+  box-shadow: 0 0 0 3px rgba(255,107,53,0.2);
+}
+.player-timer-input {
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+  padding: 2px 4px;
+  margin-bottom: 12px;
+  display: block;
+}
+.game-clock-input {
+  font-size: 2rem;
+  letter-spacing: 2px;
+  padding: 2px 8px;
+  max-width: 140px;
+}
+@media (max-width: 600px) {
+  .player-timer-input { font-size: 1.2rem; margin-bottom: 6px; }
+  .game-clock-input { font-size: 1.3rem; letter-spacing: 1px; max-width: 100px; }
+}
+
 /* ===== Empty States ===== */
 .empty-state {
   color: var(--text-muted);
