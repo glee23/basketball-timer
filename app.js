@@ -663,6 +663,12 @@ function makeTimePicker(currentSeconds, onCommit, onCancel, extraClass = '') {
   ok.addEventListener('click', (e) => { e.stopPropagation(); commit(); });
   cancel.addEventListener('click', (e) => { e.stopPropagation(); onCancel(); });
 
+  // Select all on focus so typing immediately replaces the value
+  [mInput, sInput].forEach(inp => {
+    inp.addEventListener('focus', () => inp.select());
+    inp.addEventListener('click', () => inp.select());
+  });
+
   // Auto-advance: after entering 2 digits in MM, jump to SS
   mInput.addEventListener('input', () => {
     if (mInput.value.length >= 2) { sInput.focus(); sInput.select(); }
