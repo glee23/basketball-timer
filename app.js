@@ -21,6 +21,7 @@ let state = {
   courtPlayers: [],     // up to 5 player names on court
   benchPlayers: [],     // remaining present players
   timers: {},           // { playerName: seconds }
+  fouls: {},            // { playerName: number }
   gameRunning: false,
   gameSeconds: 0,
   intervalId: null,
@@ -52,11 +53,35 @@ function initSetup() {
   });
 
   updateSetupCount();
+  updateSelectAllBtn();
 }
 
 function togglePlayerSetup(btn, name) {
   btn.classList.toggle('selected');
   updateSetupCount();
+  updateSelectAllBtn();
+}
+
+function updateSelectAllBtn() {
+  const all = document.querySelectorAll('.roster-btn');
+  const selected = document.querySelectorAll('.roster-btn.selected');
+  const btn = document.getElementById('select-all-btn');
+  if (!btn) return;
+  const allSelected = selected.length === all.length;
+  btn.textContent = allSelected ? 'Deselect All' : 'Select All';
+  btn.classList.toggle('deselect-mode', allSelected);
+}
+
+function toggleSelectAll() {
+  const all = document.querySelectorAll('.roster-btn');
+  const selected = document.querySelectorAll('.roster-btn.selected');
+  const shouldSelectAll = selected.length < all.length;
+  all.forEach(btn => {
+    if (shouldSelectAll) btn.classList.add('selected');
+    else btn.classList.remove('selected');
+  });
+  updateSetupCount();
+  updateSelectAllBtn();
 }
 
 function updateSetupCount() {
@@ -76,7 +101,8 @@ function startGame() {
 
   state.presentPlayers = selected;
   state.timers = {};
-  selected.forEach(name => { state.timers[name] = 0; });
+  state.fouls = {};
+  selected.forEach(name => { state.timers[name] = 0; state.fouls[name] = 0; });
 
   // Put first 5 (or fewer) on court
   state.courtPlayers = selected.slice(0, 5);
@@ -86,6 +112,7 @@ function startGame() {
 
   showScreen('game-screen');
   renderGame();
+  initDropZones();
   updateGameClock();
 }
 
@@ -126,43 +153,207 @@ function renderBench() {
 }
 
 function createCourtCard(name) {
+  const fouls = state.fouls[name] || 0;
+  const fouledOut = fouls >= 6;
+  const foulWarning = fouls === 5;
   const card = document.createElement('div');
-  card.className = 'player-card on-court' + (state.gameRunning ? ' timer-running' : '');
+  card.className = 'player-card on-court' + (state.gameRunning ? ' timer-running' : '') + (fouledOut ? ' fouled-out' : '') + (foulWarning ? ' foul-warning' : '');
   card.dataset.name = name;
   card.id = `card-${safeName(name)}`;
+  card.draggable = true;
 
   card.innerHTML = `
+    <div class="drag-handle" title="Drag to move">☰</div>
     <div class="player-name">${name}</div>
     <div class="player-timer" id="timer-${safeName(name)}">${formatTime(state.timers[name])}</div>
-    <div class="player-status">● On Court</div>
+    <div class="player-card-mid">
+      <div class="player-status">● On Court</div>
+      <div class="foul-tracker" id="fouls-${safeName(name)}">
+        ${renderFoulDots(fouls)}
+      </div>
+    </div>
+    <div class="foul-controls">
+      <button class="btn-foul-minus" onclick="changeFoul('${name}', -1)" ${fouls === 0 ? 'disabled' : ''}>−</button>
+      <span class="foul-label">${fouledOut ? '🚫 FOULED OUT' : foulWarning ? '⚠️ 5 FOULS' : `${fouls} foul${fouls !== 1 ? 's' : ''}`}</span>
+      <button class="btn-foul-plus" onclick="changeFoul('${name}', 1)" ${fouledOut ? 'disabled' : ''}>+</button>
+    </div>
     <div class="card-actions">
       <button class="btn-sub" onclick="openSubModal('${name}')">↔ Sub Out</button>
       <button class="btn-send-bench" onclick="sendToBench('${name}')" title="Send to bench">⤓</button>
     </div>
   `;
+
+  addDragListeners(card, name);
   return card;
 }
 
 function createBenchCard(name) {
+  const fouls = state.fouls[name] || 0;
+  const fouledOut = fouls >= 6;
+  const foulWarning = fouls === 5;
+  const courtFull = state.courtPlayers.length >= 5;
   const card = document.createElement('div');
-  card.className = 'player-card';
+  card.className = 'player-card' + (fouledOut ? ' fouled-out' : '') + (foulWarning ? ' foul-warning' : '');
   card.dataset.name = name;
   card.id = `card-${safeName(name)}`;
-
-  const courtFull = state.courtPlayers.length >= 5;
+  card.draggable = true;
 
   card.innerHTML = `
+    <div class="drag-handle" title="Drag to move">☰</div>
     <div class="player-name">${name}</div>
     <div class="player-timer" id="timer-${safeName(name)}">${formatTime(state.timers[name])}</div>
-    <div class="player-status">Bench</div>
+    <div class="player-card-mid">
+      <div class="player-status">Bench</div>
+      <div class="foul-tracker" id="fouls-${safeName(name)}">
+        ${renderFoulDots(fouls)}
+      </div>
+    </div>
+    <div class="foul-controls">
+      <button class="btn-foul-minus" onclick="changeFoul('${name}', -1)" ${fouls === 0 ? 'disabled' : ''}>−</button>
+      <span class="foul-label">${fouledOut ? '🚫 FOULED OUT' : foulWarning ? '⚠️ 5 FOULS' : `${fouls} foul${fouls !== 1 ? 's' : ''}`}</span>
+      <button class="btn-foul-plus" onclick="changeFoul('${name}', 1)" ${fouledOut ? 'disabled' : ''}>+</button>
+    </div>
     <div class="card-actions">
-      <button class="btn-put-in" ${courtFull ? 'disabled title="Court is full — sub someone out first"' : ''}
+      <button class="btn-put-in" ${courtFull || fouledOut ? 'disabled' : ''}
+        title="${fouledOut ? 'Fouled out' : courtFull ? 'Court is full — sub someone out first' : ''}"
         onclick="putOnCourt('${name}')">
-        ${courtFull ? '🔒 Court Full' : '↑ Put In'}
+        ${fouledOut ? '🚫 Fouled Out' : courtFull ? '🔒 Court Full' : '↑ Put In'}
       </button>
     </div>
   `;
+
+  addDragListeners(card, name);
   return card;
+}
+
+// ===== Drag & Drop =====
+let drag = { name: null, fromZone: null };
+
+function addDragListeners(card, name) {
+  card.addEventListener('dragstart', (e) => {
+    drag.name = name;
+    drag.fromZone = state.courtPlayers.includes(name) ? 'court' : 'bench';
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', name);
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over', 'drag-over-invalid'));
+    document.querySelectorAll('.player-card').forEach(c => c.classList.remove('drag-target'));
+  });
+  // Allow dropping onto another card (for swaps)
+  card.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (drag.name && drag.name !== name) card.classList.add('drag-target');
+  });
+  card.addEventListener('dragleave', () => card.classList.remove('drag-target'));
+  card.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    card.classList.remove('drag-target');
+    if (!drag.name || drag.name === name) return;
+    handleCardDrop(drag.name, drag.fromZone, name);
+  });
+}
+
+function handleCardDrop(fromName, fromZone, toName) {
+  const toZone = state.courtPlayers.includes(toName) ? 'court' : 'bench';
+
+  if (fromZone === 'court' && toZone === 'bench') {
+    // Court → Bench card: swap positions
+    const ci = state.courtPlayers.indexOf(fromName);
+    const bi = state.benchPlayers.indexOf(toName);
+    state.courtPlayers[ci] = toName;
+    state.benchPlayers[bi] = fromName;
+  } else if (fromZone === 'bench' && toZone === 'court') {
+    // Bench → Court card: swap positions
+    const fouledOut = (state.fouls[fromName] || 0) >= 6;
+    if (fouledOut) return;
+    const bi = state.benchPlayers.indexOf(fromName);
+    const ci = state.courtPlayers.indexOf(toName);
+    state.benchPlayers[bi] = toName;
+    state.courtPlayers[ci] = fromName;
+  } else if (fromZone === 'court' && toZone === 'court') {
+    // Reorder within court
+    const a = state.courtPlayers.indexOf(fromName);
+    const b = state.courtPlayers.indexOf(toName);
+    [state.courtPlayers[a], state.courtPlayers[b]] = [state.courtPlayers[b], state.courtPlayers[a]];
+  } else {
+    // Reorder within bench
+    const a = state.benchPlayers.indexOf(fromName);
+    const b = state.benchPlayers.indexOf(toName);
+    [state.benchPlayers[a], state.benchPlayers[b]] = [state.benchPlayers[b], state.benchPlayers[a]];
+  }
+  drag = { name: null, fromZone: null };
+  renderGame();
+}
+
+function initDropZones() {
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const targetZone = zone.dataset.zone;
+      const fouledOut = drag.name && (state.fouls[drag.name] || 0) >= 6;
+      const wouldOverfill = targetZone === 'court' && drag.fromZone === 'bench' && state.courtPlayers.length >= 5;
+      if (fouledOut || wouldOverfill) {
+        zone.classList.add('drag-over-invalid');
+      } else {
+        zone.classList.add('drag-over');
+      }
+    });
+    zone.addEventListener('dragleave', (e) => {
+      if (!zone.contains(e.relatedTarget)) {
+        zone.classList.remove('drag-over', 'drag-over-invalid');
+      }
+    });
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('drag-over', 'drag-over-invalid');
+      if (!drag.name) return;
+      const targetZone = zone.dataset.zone;
+      const fouledOut = (state.fouls[drag.name] || 0) >= 6;
+      if (fouledOut && targetZone === 'court') return;
+
+      if (targetZone === 'court' && drag.fromZone === 'bench') {
+        if (state.courtPlayers.length >= 5) return; // court full, need card swap
+        const bi = state.benchPlayers.indexOf(drag.name);
+        state.benchPlayers.splice(bi, 1);
+        state.courtPlayers.push(drag.name);
+        drag = { name: null, fromZone: null };
+        renderGame();
+      } else if (targetZone === 'bench' && drag.fromZone === 'court') {
+        const ci = state.courtPlayers.indexOf(drag.name);
+        state.courtPlayers.splice(ci, 1);
+        state.benchPlayers.push(drag.name);
+        drag = { name: null, fromZone: null };
+        renderGame();
+      }
+    });
+  });
+}
+
+// ===== Foul Tracking =====
+function renderFoulDots(count) {
+  return Array.from({length: 6}, (_, i) =>
+    `<span class="foul-dot ${i < count ? (count >= 6 ? 'foul-dot-out' : count === 5 ? 'foul-dot-warn' : 'foul-dot-filled') : ''}"></span>`
+  ).join('');
+}
+
+function changeFoul(name, delta) {
+  const current = state.fouls[name] || 0;
+  const next = Math.max(0, Math.min(6, current + delta));
+  if (next === current) return;
+  state.fouls[name] = next;
+  // Re-render the affected card only
+  const card = document.getElementById(`card-${safeName(name)}`);
+  if (!card) return;
+  const isOnCourt = state.courtPlayers.includes(name);
+  const newCard = isOnCourt ? createCourtCard(name) : createBenchCard(name);
+  card.replaceWith(newCard);
+  // Update court/bench counts in case fouled-out state changed
+  document.getElementById('court-count').textContent = `${state.courtPlayers.length}/5`;
+  document.getElementById('bench-count').textContent = state.benchPlayers.length;
 }
 
 function safeName(name) {
@@ -280,7 +471,7 @@ function resetGame() {
   state.gameRunning = false;
   state.gameSeconds = 0;
 
-  state.presentPlayers.forEach(name => { state.timers[name] = 0; });
+  state.presentPlayers.forEach(name => { state.timers[name] = 0; state.fouls[name] = 0; });
 
   const btn = document.getElementById('game-timer-btn');
   btn.textContent = '▶ Start';
@@ -309,6 +500,7 @@ function goToSetup() {
 
 // ===== Event Listeners =====
 document.getElementById('start-game-btn').addEventListener('click', startGame);
+document.getElementById('select-all-btn').addEventListener('click', toggleSelectAll);
 document.getElementById('game-timer-btn').addEventListener('click', toggleGameTimer);
 document.getElementById('reset-btn').addEventListener('click', resetGame);
 document.getElementById('back-btn').addEventListener('click', goToSetup);
