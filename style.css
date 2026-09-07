@@ -541,6 +541,210 @@ body {
 
 .modal-actions { display: flex; justify-content: flex-end; }
 
+/* ===== Foul Tracking ===== */
+.player-card-mid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.foul-tracker {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.foul-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-muted);
+  background: transparent;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.foul-dot-filled {
+  background: var(--orange);
+  border-color: var(--orange);
+}
+
+.foul-dot-warn {
+  background: #F39C12;
+  border-color: #F39C12;
+  box-shadow: 0 0 6px rgba(243,156,18,0.6);
+}
+
+.foul-dot-out {
+  background: #E74C3C;
+  border-color: #E74C3C;
+  box-shadow: 0 0 6px rgba(231,76,60,0.6);
+}
+
+.foul-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+
+.btn-foul-minus, .btn-foul-plus {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--card-border);
+  background: rgba(255,255,255,0.06);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.btn-foul-minus:hover:not(:disabled), .btn-foul-plus:hover:not(:disabled) {
+  background: rgba(255,107,53,0.2);
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.btn-foul-minus:disabled, .btn-foul-plus:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.foul-label {
+  flex: 1;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* Foul warning state */
+.player-card.foul-warning {
+  border-color: #F39C12;
+}
+
+.player-card.foul-warning::before {
+  background: #F39C12 !important;
+}
+
+.player-card.foul-warning .foul-label {
+  color: #F39C12;
+}
+
+/* Fouled out state */
+.player-card.fouled-out {
+  border-color: #E74C3C;
+  opacity: 0.75;
+}
+
+.player-card.fouled-out::before {
+  background: #E74C3C !important;
+}
+
+.player-card.fouled-out .player-name {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.player-card.fouled-out .foul-label {
+  color: #E74C3C;
+}
+
+/* ===== Drag & Drop ===== */
+.player-card {
+  cursor: default;
+}
+
+.drag-handle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: grab;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+  user-select: none;
+  line-height: 1;
+}
+
+.player-card:hover .drag-handle {
+  opacity: 0.8;
+}
+
+.player-card.dragging {
+  opacity: 0.4;
+  transform: scale(0.97);
+  box-shadow: none;
+}
+
+.player-card.drag-target {
+  border-color: var(--orange) !important;
+  background: rgba(255,107,53,0.1) !important;
+  transform: scale(1.02);
+}
+
+.drop-zone {
+  transition: background 0.15s, border 0.15s;
+  min-height: 80px;
+  border-radius: var(--radius-sm);
+  border: 2px dashed transparent;
+}
+
+.drop-zone.drag-over {
+  background: rgba(46,204,113,0.05);
+  border-color: rgba(46,204,113,0.3);
+}
+
+.drop-zone.drag-over-invalid {
+  background: rgba(231,76,60,0.05);
+  border-color: rgba(231,76,60,0.3);
+}
+
+/* ===== Select All ===== */
+.setup-controls {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.btn-select-all {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  padding: 7px 18px;
+  font-size: 0.82rem;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+}
+
+.btn-select-all:hover {
+  background: rgba(255,107,53,0.12);
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.btn-select-all.deselect-mode {
+  background: rgba(255,107,53,0.12);
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
 /* ===== Empty States ===== */
 .empty-state {
   color: var(--text-muted);
