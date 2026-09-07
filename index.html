@@ -15,6 +15,9 @@
         <h1>Basketball Timer</h1>
         <p class="subtitle">Select players attending today's game</p>
       </div>
+      <div class="setup-controls">
+        <button id="select-all-btn" class="btn btn-select-all">Select All</button>
+      </div>
       <div class="roster-grid" id="roster-setup"></div>
       <div class="setup-footer">
         <span id="selected-count" class="selected-count">0 players selected</span>
@@ -47,7 +50,7 @@
             <span class="court-icon">🟢</span>
             <h2>On Court <span id="court-count" class="count-badge">0/5</span></h2>
           </div>
-          <div class="players-grid" id="court-players"></div>
+          <div class="players-grid drop-zone" id="court-players" data-zone="court"></div>
         </section>
 
         <!-- Bench Section -->
@@ -56,7 +59,7 @@
             <span class="bench-icon">🪑</span>
             <h2>Bench <span id="bench-count" class="count-badge">0</span></h2>
           </div>
-          <div class="players-grid" id="bench-players"></div>
+          <div class="players-grid drop-zone" id="bench-players" data-zone="bench"></div>
         </section>
       </div>
     </div>
