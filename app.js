@@ -35,6 +35,71 @@ function formatTime(seconds) {
   return `${m}:${s}`;
 }
 
+// ===== Local Storage =====
+const STORAGE_KEY = 'oballers_game_state';
+
+function saveState() {
+  try {
+    const snapshot = {
+      screen: document.getElementById('game-screen').classList.contains('active') ? 'game' : 'setup',
+      presentPlayers: state.presentPlayers,
+      courtPlayers:   state.courtPlayers,
+      benchPlayers:   state.benchPlayers,
+      timers:         state.timers,
+      fouls:          state.fouls,
+      gameSeconds:    state.gameSeconds,
+      // always save as paused — timers shouldn't auto-run on reload
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+  } catch(e) { /* storage unavailable */ }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const snap = JSON.parse(raw);
+    if (!snap.presentPlayers || snap.presentPlayers.length === 0) return false;
+
+    state.presentPlayers = snap.presentPlayers;
+    state.courtPlayers   = snap.courtPlayers  || [];
+    state.benchPlayers   = snap.benchPlayers  || [];
+    state.timers         = snap.timers        || {};
+    state.fouls          = snap.fouls         || {};
+    state.gameSeconds    = snap.gameSeconds   || 0;
+    state.gameRunning    = false;
+
+    if (snap.screen === 'game') {
+      showScreen('game-screen');
+      const clockEl = document.getElementById('game-clock');
+      if (clockEl) { clockEl.onclick = editGameClock; clockEl.title = 'Tap to edit'; }
+      renderGame();
+      initDropZones();
+      updateGameClock();
+      // Re-highlight setup selections for if they go back
+      state.presentPlayers.forEach(name => {
+        const btn = document.querySelector(`.roster-btn[data-name="${name}"]`);
+        if (btn) btn.classList.add('selected');
+      });
+      updateSetupCount();
+      updateSelectAllBtn();
+      return true;
+    }
+    // Setup screen — restore selections
+    state.presentPlayers.forEach(name => {
+      const btn = document.querySelector(`.roster-btn[data-name="${name}"]`);
+      if (btn) btn.classList.add('selected');
+    });
+    updateSetupCount();
+    updateSelectAllBtn();
+    return true;
+  } catch(e) { return false; }
+}
+
+function clearSavedState() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+}
+
 // ===== Setup Screen =====
 function initSetup() {
   const grid = document.getElementById('roster-setup');
@@ -116,6 +181,7 @@ function startGame() {
   renderGame();
   initDropZones();
   updateGameClock();
+  saveState();
 }
 
 // ===== Render Game =====
@@ -124,6 +190,7 @@ function renderGame() {
   renderBench();
   document.getElementById('court-count').textContent = `${state.courtPlayers.length}/5`;
   document.getElementById('bench-count').textContent = state.benchPlayers.length;
+  saveState();
 }
 
 function renderCourt() {
@@ -526,6 +593,7 @@ function closeSubModal() {
 }
 
 // ===== Timers =====
+let _saveTick = 0;
 function tick() {
   state.gameSeconds++;
   updateGameClock();
@@ -534,8 +602,11 @@ function tick() {
   state.courtPlayers.forEach(name => {
     state.timers[name]++;
     const el = document.getElementById(`timer-${safeName(name)}`);
-    if (el) el.textContent = formatTime(state.timers[name]);
+    if (el && el.tagName !== 'INPUT') el.textContent = formatTime(state.timers[name]);
   });
+
+  // Save every 5 seconds to avoid excessive writes
+  if (++_saveTick >= 5) { _saveTick = 0; saveState(); }
 }
 
 function updateGameClock() {
@@ -582,6 +653,7 @@ function editGameClock() {
     newEl.onclick = editGameClock;
     newEl.title = 'Tap to edit';
     input.replaceWith(newEl);
+    saveState();
   };
   input.addEventListener('blur', commit);
   input.addEventListener('keydown', (e) => {
@@ -614,6 +686,7 @@ function editPlayerTimer(name) {
     newEl.onclick = () => editPlayerTimer(name);
     newEl.title = 'Tap to edit';
     input.replaceWith(newEl);
+    saveState();
   };
   input.addEventListener('blur', commit);
   input.addEventListener('keydown', (e) => {
@@ -660,6 +733,7 @@ function resetGame() {
 
   updateGameClock();
   renderGame();
+  saveState();
 }
 
 // ===== Screen Navigation =====
@@ -675,6 +749,7 @@ function goToSetup() {
     state.intervalId = null;
     state.gameRunning = false;
   }
+  saveState();
   showScreen('setup-screen');
 }
 
@@ -692,3 +767,4 @@ document.getElementById('sub-modal').addEventListener('click', (e) => {
 
 // ===== Init =====
 initSetup();
+loadState();
