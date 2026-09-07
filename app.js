@@ -111,6 +111,8 @@ function startGame() {
   state.gameSeconds = 0;
 
   showScreen('game-screen');
+  const clockEl = document.getElementById('game-clock');
+  if (clockEl) { clockEl.onclick = editGameClock; clockEl.title = 'Tap to edit'; }
   renderGame();
   initDropZones();
   updateGameClock();
@@ -165,7 +167,7 @@ function createCourtCard(name) {
   card.innerHTML = `
     <div class="drag-handle" title="Drag to move">☰</div>
     <div class="player-name">${name}</div>
-    <div class="player-timer" id="timer-${safeName(name)}">${formatTime(state.timers[name])}</div>
+    <div class="player-timer" id="timer-${safeName(name)}" onclick="editPlayerTimer('${name}')" title="Tap to edit">${formatTime(state.timers[name])}</div>
     <div class="player-card-mid">
       <div class="player-status">● On Court</div>
       <div class="foul-tracker" id="fouls-${safeName(name)}">
@@ -201,7 +203,7 @@ function createBenchCard(name) {
   card.innerHTML = `
     <div class="drag-handle" title="Drag to move">☰</div>
     <div class="player-name">${name}</div>
-    <div class="player-timer" id="timer-${safeName(name)}">${formatTime(state.timers[name])}</div>
+    <div class="player-timer" id="timer-${safeName(name)}" onclick="editPlayerTimer('${name}')" title="Tap to edit">${formatTime(state.timers[name])}</div>
     <div class="player-card-mid">
       <div class="player-status">Bench</div>
       <div class="foul-tracker" id="fouls-${safeName(name)}">
@@ -537,7 +539,87 @@ function tick() {
 }
 
 function updateGameClock() {
-  document.getElementById('game-clock').textContent = formatTime(state.gameSeconds);
+  const el = document.getElementById('game-clock');
+  if (el && el.tagName !== 'INPUT') el.textContent = formatTime(state.gameSeconds);
+}
+
+// ===== Editable Timers =====
+function parseTimeInput(val) {
+  const clean = val.trim().replace(/[^0-9:]/g, '');
+  // Accept MM:SS or plain seconds
+  if (clean.includes(':')) {
+    const [m, s] = clean.split(':').map(Number);
+    if (isNaN(m) || isNaN(s)) return null;
+    return Math.max(0, m * 60 + Math.min(59, s));
+  }
+  const n = parseInt(clean, 10);
+  return isNaN(n) ? null : Math.max(0, n);
+}
+
+function editGameClock() {
+  const el = document.getElementById('game-clock');
+  if (!el || el.tagName === 'INPUT') return;
+  const wasPaused = !state.gameRunning;
+  // Pause while editing
+  if (state.gameRunning) toggleGameTimer();
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = formatTime(state.gameSeconds);
+  input.className = 'timer-input game-clock-input';
+  input.inputMode = 'numeric';
+  input.placeholder = 'MM:SS';
+  el.replaceWith(input);
+  input.select();
+
+  const commit = () => {
+    const secs = parseTimeInput(input.value);
+    if (secs !== null) state.gameSeconds = secs;
+    const newEl = document.createElement('div');
+    newEl.id = 'game-clock';
+    newEl.className = 'game-clock';
+    newEl.textContent = formatTime(state.gameSeconds);
+    newEl.onclick = editGameClock;
+    newEl.title = 'Tap to edit';
+    input.replaceWith(newEl);
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = formatTime(state.gameSeconds); input.blur(); }
+  });
+}
+
+function editPlayerTimer(name) {
+  const el = document.getElementById(`timer-${safeName(name)}`);
+  if (!el || el.tagName === 'INPUT') return;
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = formatTime(state.timers[name]);
+  input.className = 'timer-input player-timer-input';
+  input.inputMode = 'numeric';
+  input.placeholder = 'MM:SS';
+  input.id = `timer-${safeName(name)}`;
+  el.replaceWith(input);
+  input.select();
+
+  const commit = () => {
+    const secs = parseTimeInput(input.value);
+    if (secs !== null) state.timers[name] = secs;
+    const newEl = document.createElement('div');
+    newEl.className = 'player-timer';
+    newEl.id = `timer-${safeName(name)}`;
+    newEl.textContent = formatTime(state.timers[name]);
+    newEl.onclick = () => editPlayerTimer(name);
+    newEl.title = 'Tap to edit';
+    input.replaceWith(newEl);
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = formatTime(state.timers[name]); input.blur(); }
+  });
 }
 
 function toggleGameTimer() {
