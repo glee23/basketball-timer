@@ -819,29 +819,27 @@ body {
   .section-label { margin-bottom: 10px; }
   .section-label h2 { font-size: 0.75rem; letter-spacing: 1.5px; }
 
-  /* Cards — horizontal scroll rows on mobile */
+  /* Cards — 2-column vertical grid */
   .players-grid {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 10px;
-    padding-bottom: 6px;
-    /* hide scrollbar but keep scrollability */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    /* snap to cards */
-    scroll-snap-type: x mandatory;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
   .players-grid::-webkit-scrollbar { display: none; }
 
   .player-card {
-    flex: 0 0 160px;
-    scroll-snap-align: start;
-    padding: 12px;
+    flex: unset;
+    scroll-snap-align: unset;
+    padding: 10px;
   }
 
-  .player-name { font-size: 0.92rem; margin-bottom: 4px; }
-  .player-timer { font-size: 1.35rem; margin-bottom: 8px; }
+  .player-name { font-size: 0.82rem; margin-bottom: 2px; }
+  .player-timer { font-size: 1.2rem; margin-bottom: 6px; letter-spacing: 0; }
+  .player-status { margin-bottom: 6px; font-size: 0.65rem; }
+  .player-card-mid { margin-bottom: 6px; }
+
+  /* Foul dots slightly smaller */
+  .foul-dot { width: 8px; height: 8px; }
 
   /* Bigger tap targets for foul buttons */
   .btn-foul-minus, .btn-foul-plus {
@@ -849,13 +847,13 @@ body {
     height: 34px;
     font-size: 1.1rem;
   }
-  .foul-controls { padding: 5px 6px; gap: 6px; margin-bottom: 8px; }
-  .foul-label { font-size: 0.65rem; }
+  .foul-controls { padding: 4px 5px; gap: 4px; margin-bottom: 7px; }
+  .foul-label { font-size: 0.6rem; }
 
-  /* Action buttons — full width stack */
-  .card-actions { gap: 6px; }
-  .btn-sub, .btn-put-in { padding: 8px 6px; font-size: 0.75rem; }
-  .btn-send-bench { padding: 8px 8px; font-size: 0.75rem; }
+  /* Action buttons */
+  .card-actions { gap: 5px; }
+  .btn-sub, .btn-put-in { padding: 7px 4px; font-size: 0.72rem; }
+  .btn-send-bench { padding: 7px 7px; font-size: 0.72rem; }
 
   /* Modal */
   .modal { padding: 18px 16px; }
