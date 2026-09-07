@@ -610,88 +610,121 @@ function tick() {
 
 function updateGameClock() {
   const el = document.getElementById('game-clock');
-  if (el && el.tagName !== 'INPUT') el.textContent = formatTime(state.gameSeconds);
+  if (el && !el.classList.contains('time-picker')) el.textContent = formatTime(state.gameSeconds);
 }
 
 // ===== Editable Timers =====
-function parseTimeInput(val) {
-  const clean = val.trim().replace(/[^0-9:]/g, '');
-  // Accept MM:SS or plain seconds
-  if (clean.includes(':')) {
-    const [m, s] = clean.split(':').map(Number);
-    if (isNaN(m) || isNaN(s)) return null;
-    return Math.max(0, m * 60 + Math.min(59, s));
-  }
-  const n = parseInt(clean, 10);
-  return isNaN(n) ? null : Math.max(0, n);
+function makeTimePicker(currentSeconds, onCommit, onCancel, extraClass = '') {
+  const mins = Math.floor(currentSeconds / 60);
+  const secs = currentSeconds % 60;
+
+  const wrap = document.createElement('div');
+  wrap.className = `time-picker ${extraClass}`;
+
+  const mInput = document.createElement('input');
+  mInput.type = 'number'; mInput.min = 0; mInput.max = 99;
+  mInput.value = mins; mInput.inputMode = 'numeric';
+  mInput.className = 'time-picker-field'; mInput.placeholder = 'MM';
+
+  const sep = document.createElement('span');
+  sep.className = 'time-picker-sep'; sep.textContent = ':';
+
+  const sInput = document.createElement('input');
+  sInput.type = 'number'; sInput.min = 0; sInput.max = 59;
+  sInput.value = String(secs).padStart(2, '0');
+  sInput.inputMode = 'numeric';
+  sInput.className = 'time-picker-field'; sInput.placeholder = 'SS';
+
+  const ok = document.createElement('button');
+  ok.className = 'time-picker-ok'; ok.textContent = '✓';
+
+  const cancel = document.createElement('button');
+  cancel.className = 'time-picker-cancel'; cancel.textContent = '✕';
+
+  wrap.append(mInput, sep, sInput, ok, cancel);
+
+  const commit = () => {
+    const m = Math.max(0, parseInt(mInput.value) || 0);
+    const s = Math.min(59, Math.max(0, parseInt(sInput.value) || 0));
+    onCommit(m * 60 + s);
+  };
+
+  ok.addEventListener('click', (e) => { e.stopPropagation(); commit(); });
+  cancel.addEventListener('click', (e) => { e.stopPropagation(); onCancel(); });
+
+  // Auto-advance: after entering 2 digits in MM, jump to SS
+  mInput.addEventListener('input', () => {
+    if (mInput.value.length >= 2) sInput.focus();
+  });
+  // Enter confirms from either field
+  [mInput, sInput].forEach(inp => {
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+    });
+  });
+
+  return { wrap, focusFirst: () => { mInput.select(); } };
 }
 
 function editGameClock() {
   const el = document.getElementById('game-clock');
-  if (!el || el.tagName === 'INPUT') return;
-  const wasPaused = !state.gameRunning;
-  // Pause while editing
+  if (!el || el.classList.contains('time-picker')) return;
   if (state.gameRunning) toggleGameTimer();
 
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.value = formatTime(state.gameSeconds);
-  input.className = 'timer-input game-clock-input';
-  input.inputMode = 'numeric';
-  input.placeholder = 'MM:SS';
-  el.replaceWith(input);
-  input.select();
-
-  const commit = () => {
-    const secs = parseTimeInput(input.value);
-    if (secs !== null) state.gameSeconds = secs;
-    const newEl = document.createElement('div');
-    newEl.id = 'game-clock';
-    newEl.className = 'game-clock';
-    newEl.textContent = formatTime(state.gameSeconds);
-    newEl.onclick = editGameClock;
-    newEl.title = 'Tap to edit';
-    input.replaceWith(newEl);
-    saveState();
-  };
-  input.addEventListener('blur', commit);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-    if (e.key === 'Escape') { input.value = formatTime(state.gameSeconds); input.blur(); }
-  });
+  const { wrap, focusFirst } = makeTimePicker(
+    state.gameSeconds,
+    (secs) => {
+      state.gameSeconds = secs;
+      const newEl = document.createElement('div');
+      newEl.id = 'game-clock'; newEl.className = 'game-clock';
+      newEl.textContent = formatTime(state.gameSeconds);
+      newEl.onclick = editGameClock; newEl.title = 'Tap to edit';
+      wrap.replaceWith(newEl);
+      saveState();
+    },
+    () => {
+      const newEl = document.createElement('div');
+      newEl.id = 'game-clock'; newEl.className = 'game-clock';
+      newEl.textContent = formatTime(state.gameSeconds);
+      newEl.onclick = editGameClock; newEl.title = 'Tap to edit';
+      wrap.replaceWith(newEl);
+    },
+    'game-clock-picker'
+  );
+  wrap.id = 'game-clock';
+  el.replaceWith(wrap);
+  focusFirst();
 }
 
 function editPlayerTimer(name) {
   const el = document.getElementById(`timer-${safeName(name)}`);
-  if (!el || el.tagName === 'INPUT') return;
+  if (!el || el.classList.contains('time-picker')) return;
 
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.value = formatTime(state.timers[name]);
-  input.className = 'timer-input player-timer-input';
-  input.inputMode = 'numeric';
-  input.placeholder = 'MM:SS';
-  input.id = `timer-${safeName(name)}`;
-  el.replaceWith(input);
-  input.select();
-
-  const commit = () => {
-    const secs = parseTimeInput(input.value);
-    if (secs !== null) state.timers[name] = secs;
-    const newEl = document.createElement('div');
-    newEl.className = 'player-timer';
-    newEl.id = `timer-${safeName(name)}`;
-    newEl.textContent = formatTime(state.timers[name]);
-    newEl.onclick = () => editPlayerTimer(name);
-    newEl.title = 'Tap to edit';
-    input.replaceWith(newEl);
-    saveState();
-  };
-  input.addEventListener('blur', commit);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-    if (e.key === 'Escape') { input.value = formatTime(state.timers[name]); input.blur(); }
-  });
+  const { wrap, focusFirst } = makeTimePicker(
+    state.timers[name] || 0,
+    (secs) => {
+      state.timers[name] = secs;
+      const newEl = document.createElement('div');
+      newEl.className = 'player-timer';
+      newEl.id = `timer-${safeName(name)}`;
+      newEl.textContent = formatTime(state.timers[name]);
+      newEl.onclick = () => editPlayerTimer(name); newEl.title = 'Tap to edit';
+      wrap.replaceWith(newEl);
+      saveState();
+    },
+    () => {
+      const newEl = document.createElement('div');
+      newEl.className = 'player-timer';
+      newEl.id = `timer-${safeName(name)}`;
+      newEl.textContent = formatTime(state.timers[name]);
+      newEl.onclick = () => editPlayerTimer(name); newEl.title = 'Tap to edit';
+      wrap.replaceWith(newEl);
+    }
+  );
+  wrap.id = `timer-${safeName(name)}`;
+  el.replaceWith(wrap);
+  focusFirst();
 }
 
 function toggleGameTimer() {
