@@ -300,8 +300,9 @@ let drag = { name: null, fromZone: null };
 let touchGhost = null;
 
 function addDragListeners(card, name) {
-  // ── Mouse drag ──
+  // ── Mouse drag — only allow if drag started on the handle ──
   card.addEventListener('dragstart', (e) => {
+    if (!e.target.closest('.drag-handle')) { e.preventDefault(); return; }
     drag.name = name;
     drag.fromZone = state.courtPlayers.includes(name) ? 'court' : 'bench';
     card.classList.add('dragging');
@@ -326,13 +327,16 @@ function addDragListeners(card, name) {
     handleCardDrop(drag.name, drag.fromZone, name);
   });
 
-  // ── Touch drag ──
+  // ── Touch drag — only initiate from the handle ──
   card.addEventListener('touchstart', onTouchStart, { passive: false });
   card.addEventListener('touchmove',  onTouchMove,  { passive: false });
   card.addEventListener('touchend',   onTouchEnd,   { passive: false });
 }
 
 function onTouchStart(e) {
+  // Only initiate drag from the handle
+  if (!e.target.closest('.drag-handle')) return;
+
   const card = e.currentTarget;
   const name = card.dataset.name;
   if (!name) return;
